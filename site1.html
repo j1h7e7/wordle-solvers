@@ -1,0 +1,156 @@
+<html>
+<head>
+    <title>Wordle Test</title>
+
+<style>
+table {
+    width: 50%;
+    position: absolute;
+    top: 0;
+    left: 25%;
+}
+td[id^="cell"] {
+    border: 1px solid black;
+    background-color: #888;
+    width: calc(10% - 10px);
+}
+td[id^="cell"]::after {
+    content: "";
+    display: block;
+    padding-bottom: 100%;
+}
+.content {
+    position: relative;
+    width: 100%;
+    top: -0.7vw;
+    height: 0;
+    font-size: 9vw;
+    display: flex;
+    justify-content: center;
+    font-family: monospace;
+    user-select: none;
+}
+</style>
+
+<script>
+
+let h=6;
+let w=5;
+let active_row = 0;
+
+class Worldle {
+    constructor(rows, cols) {
+        this.cell_colors = [new Array(cols).fill('_')]
+        this.rows = rows
+        this.cols = cols
+
+        this.colors = {
+            '_': 'darkgray', 'y': 'yellow', 'g': 'green'
+        }
+    }
+
+    change_cell (i, j) {
+        [['_','y'],['y','g'],['g','_']].forEach((x)=>{
+            if (this.cell_colors[i][j] == x[0]) this.cell_colors[i][j] = x[1]
+        })
+
+        document.getElementById("cell"+i+j).style['background-color'] = this.colors[this.cell_colors[i][j]]
+    }
+
+    add_row () {
+        if (this.cell_colors.length >= 0) {
+            this.cell_colors.push(new Array(cols).fill('_'))
+        }
+    }
+}
+
+function generate_table(rows, cols) {
+    fulltable = "<table>\n";
+    for (let i=0;i<rows;i++) {
+        fulltable += '<tr class="row'+i+'">\n';
+        for (let j=0;j<cols;j++) {
+            fulltable += '<td id="cell'+i+j+'">';
+            fulltable += '<span class="content"> </span>'
+            fulltable += '</td>\n';
+        }
+        fulltable += '</tr>\n'
+    }
+    fulltable += "</table>";
+
+    return fulltable
+}
+
+function fill_row_with_word(row, word) {
+    word = word.toUpperCase();
+    for (let i=0;i<word.length;i++) {
+        let x = document.getElementById('cell'+row+i).getElementsByClassName('content')[0]
+        x.innerHTML = word[i]
+    }
+}
+
+function activate_row(row, cols) {
+    for (let j=0;j<cols;j++) {
+        let x = document.getElementById("cell"+row+j)
+        x.style['background-color'] = "darkgray"
+    }
+}
+
+function get_code(row, cols) {
+    final_code = ""
+
+    for (let j=0;j<w;j++) {
+        let x = document.getElementById("cell"+row+j)
+        current_color = x.style['background-color']
+            
+        if (current_color == "darkgray")    final_code += "_";
+        else if (current_color == "yellow") final_code += "Y";
+        else if (current_color == "green")  final_code += "G";
+            
+    }
+
+    return final_code;
+}
+
+function main() {
+    document.getElementById("game").innerHTML = generate_table(h,w)
+
+    for (let i=0;i<h;i++) {
+        for (let j=0;j<w;j++) {
+            let x = document.getElementById("cell"+i+j)
+            x.onclick = () => {
+                if (i != active_row) return;
+
+                current_color = x.style['background-color']
+                
+                if (current_color == "darkgray") x.style['background-color'] = "yellow";
+                else if (current_color == "yellow") x.style['background-color'] = "green";
+                else if (current_color == "green") x.style['background-color'] = "darkgray";
+                
+                console.log(i,j,current_color);
+            }
+        }
+    }
+
+    fill_row_with_word(0,'toeas');
+    activate_row(0,w);
+
+    document.addEventListener('keypress', function (e) {
+        if (e.key=='Enter') {
+            console.log(get_code(active_row,w));
+
+            active_row += 1;
+            if (active_row >= h) return;
+            activate_row(active_row,w);
+        }
+    })
+}
+
+window.addEventListener('load', main)
+</script>
+</head>
+
+<body>
+    <div id="game">
+    </div>
+</body>
+</html>
