@@ -10,8 +10,8 @@ table {
     left: 25%;
 }
 td[id^="cell"] {
-    border: 1px solid black;
-    background-color: #888;
+    border: 2px solid #444;
+    background-color: white;
     width: calc(10% - 10px);
 }
 td[id^="cell"]::after {
@@ -36,13 +36,17 @@ td[id^="cell"]::after {
 
 let h=6;
 let w=5;
-let active_row = 0;
+let game;
+let word_list;
 
-class Worldle {
+class Wordle {
     constructor(rows, cols) {
-        this.cell_colors = [new Array(cols).fill('_')]
-        this.rows = rows
-        this.cols = cols
+        this.cell_colors = [];
+        this.rows = rows;
+        this.cols = cols;
+
+        this.color_cycle = [['_','y'],['y','g'],['g','_']];
+        this.active_row = -1;
 
         this.colors = {
             '_': 'darkgray', 'y': 'yellow', 'g': 'green'
@@ -50,16 +54,30 @@ class Worldle {
     }
 
     change_cell (i, j) {
-        [['_','y'],['y','g'],['g','_']].forEach((x)=>{
-            if (this.cell_colors[i][j] == x[0]) this.cell_colors[i][j] = x[1]
-        })
+        if (i != this.active_row) return;
 
-        document.getElementById("cell"+i+j).style['background-color'] = this.colors[this.cell_colors[i][j]]
+        for (let c=0;c<3;c++) {
+            if (this.cell_colors[i][j] == this.color_cycle[c][0]) {
+                this.cell_colors[i][j] = this.color_cycle[c][1];
+                break;
+            }
+        }
+
+        document.getElementById("cell"+i+j).style['background-color'] = this.colors[this.cell_colors[i][j]];
+    }
+
+    get_row_code () {
+        return this.cell_colors.slice(-1)[0].join('');
     }
 
     add_row () {
-        if (this.cell_colors.length >= 0) {
-            this.cell_colors.push(new Array(cols).fill('_'))
+        if (this.cell_colors.length >= this.rows) return;
+
+        this.cell_colors.push(new Array(this.cols).fill('_'));
+        this.active_row += 1
+
+        for (let j=0;j<this.cols;j++) {
+            document.getElementById("cell"+this.active_row+j).style['background-color'] = "darkgray";
         }
     }
 }
@@ -88,61 +106,35 @@ function fill_row_with_word(row, word) {
     }
 }
 
-function activate_row(row, cols) {
-    for (let j=0;j<cols;j++) {
-        let x = document.getElementById("cell"+row+j)
-        x.style['background-color'] = "darkgray"
-    }
-}
-
-function get_code(row, cols) {
-    final_code = ""
-
-    for (let j=0;j<w;j++) {
-        let x = document.getElementById("cell"+row+j)
-        current_color = x.style['background-color']
-            
-        if (current_color == "darkgray")    final_code += "_";
-        else if (current_color == "yellow") final_code += "Y";
-        else if (current_color == "green")  final_code += "G";
-            
-    }
-
-    return final_code;
-}
-
 function main() {
-    document.getElementById("game").innerHTML = generate_table(h,w)
+    document.getElementById("game").innerHTML = generate_table(h, w);
+    game = new Wordle(h, w);
 
     for (let i=0;i<h;i++) {
         for (let j=0;j<w;j++) {
             let x = document.getElementById("cell"+i+j)
             x.onclick = () => {
-                if (i != active_row) return;
-
-                current_color = x.style['background-color']
-                
-                if (current_color == "darkgray") x.style['background-color'] = "yellow";
-                else if (current_color == "yellow") x.style['background-color'] = "green";
-                else if (current_color == "green") x.style['background-color'] = "darkgray";
-                
-                console.log(i,j,current_color);
+                game.change_cell(i,j);
+                console.log(i,j);
             }
         }
     }
 
-    fill_row_with_word(0,'toeas');
-    activate_row(0,w);
-
     document.addEventListener('keypress', function (e) {
         if (e.key=='Enter') {
-            console.log(get_code(active_row,w));
-
-            active_row += 1;
-            if (active_row >= h) return;
-            activate_row(active_row,w);
+            console.log(game.get_row_code())
+            game.add_row();
         }
     })
+
+    fill_row_with_word(0,'toeas');
+    game.add_row()
+
+    fetch("https://raw.githubusercontent.com/lorenbrichter/Words/master/Words/en.txt")
+        .then( r => r.text() )
+        .then( t => {
+            word_list = t.split('\n').filter(word => word.length==5);
+        });
 }
 
 window.addEventListener('load', main)
@@ -150,7 +142,6 @@ window.addEventListener('load', main)
 </head>
 
 <body>
-    <div id="game">
-    </div>
+    <div id="game"></div>
 </body>
 </html>
