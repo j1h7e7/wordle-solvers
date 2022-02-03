@@ -4,10 +4,10 @@
 
 <style>
 table {
-    width: 50%;
+    width: 40%;
     position: absolute;
     top: 0;
-    left: 25%;
+    left: 30%;
 }
 td[id^="cell"] {
     border: 2px solid #444;
@@ -23,9 +23,9 @@ td[id^="cell"]::after {
 .content {
     position: relative;
     width: 100%;
-    top: -0.7vw;
+    top: -1.1vw;
     height: 0;
-    font-size: 9vw;
+    font-size: 8vw;
     display: flex;
     justify-content: center;
     font-family: monospace;
@@ -93,8 +93,27 @@ class Wordle {
         return num
     }
 
-    static get_optimal_word(pws) {
-        return pws[Math.floor(Math.random()*pws.length)];
+    get_optimal_word(pws) {
+        if (pws.length == 1) return pws[0];
+
+        //let candidates = pws;         // fast but not as good
+        let candidates = word_list;     // slow but better player
+
+        let scores = []
+        candidates.forEach(word => {
+            let distribution = new Array(3**this.cols).fill(0);
+            pws.forEach(word2 => {
+                distribution[Wordle.check(word2, word)] += 1 
+            })
+            console.log(distribution);
+            scores[word] = Math.max(...distribution);
+            if (pws.includes(word)) scores[word] -= 0.1;
+        })
+
+        console.log(scores)
+
+        return Object.keys(scores).reduce((w1, w2) => scores[w1]<scores[w2] ? w1 : w2);
+        //return pws[Math.floor(Math.random()*pws.length)];
     }
 
     change_cell (i, j) {
@@ -143,9 +162,12 @@ class Wordle {
     }
 
     submit () {
+        if (this.active_row+1 >= this.rows) return;
+        if (Wordle.c2n(this.get_row_code()) == 3**this.cols-1) return;
+
         this.update_possible_words();
         this.add_row();
-        this.active_word = Wordle.get_optimal_word(this.possible_words)
+        this.active_word = this.get_optimal_word(this.possible_words)
         Wordle.fill_row_with_word(this.active_row, this.active_word)
     }
 }
