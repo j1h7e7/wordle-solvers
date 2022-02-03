@@ -11,6 +11,7 @@ table {
 }
 td[id^="cell"] {
     border: 2px solid #444;
+    border-radius: 1vw;
     background-color: white;
     width: calc(10% - 10px);
 }
@@ -44,13 +45,56 @@ class Wordle {
         this.cell_colors = [];
         this.rows = rows;
         this.cols = cols;
+        this.possible_words = [];
 
         this.color_cycle = [['_','y'],['y','g'],['g','_']];
         this.active_row = -1;
+        this.active_word = "toeas";
 
         this.colors = {
             '_': 'darkgray', 'y': 'yellow', 'g': 'green'
         }
+    }
+
+    static color_keys = {'_':0,'y':1,'g':2}
+    static c2n(code) { // code (__G__) to number (00200 ternary)
+        let num = 0
+        for (let i=0;i<code.length;i++) {
+            num += Wordle.color_keys[code[i]] * (3 ** i)
+        }
+        return num
+    }
+
+    static check(real_word, test_word) {
+        if (real_word.length != test_word.length) throw "Word lengths must be the same!";
+
+        let num = 0
+
+        let test = test_word.split('')
+        let real = real_word.split('')
+        for (let i=0;i<test_word.length;i++) {
+            if (test[i] == real_word[i]) {
+                num += 2 * (3 ** i);
+                delete test[i];
+                delete real[i];
+                continue;
+            }
+            if (!real_word.includes(test[i])) delete[test[i]];
+        }
+        for (let i=0;i<test_word.length;i++) {
+            if (!test[i]) continue;
+
+            if (real.includes(test[i])) {
+                num += (3**i)
+                delete real[real.findIndex((x)=>x==test[i])]
+            }
+        }
+
+        return num
+    }
+
+    static get_optimal_word(pws) {
+        return pws[Math.floor(Math.random()*pws.length)];
     }
 
     change_cell (i, j) {
@@ -66,6 +110,15 @@ class Wordle {
         document.getElementById("cell"+i+j).style['background-color'] = this.colors[this.cell_colors[i][j]];
     }
 
+    update_possible_words() {
+        let code = Wordle.c2n(this.get_row_code());
+        console.log(code);
+        if (this.active_row == 0) this.possible_words = [...word_list];
+
+        this.possible_words = this.possible_words.filter(word => 
+            Wordle.check(word, this.active_word) == code)
+    }
+
     get_row_code () {
         return this.cell_colors.slice(-1)[0].join('');
     }
@@ -79,6 +132,21 @@ class Wordle {
         for (let j=0;j<this.cols;j++) {
             document.getElementById("cell"+this.active_row+j).style['background-color'] = "darkgray";
         }
+    }
+
+    static fill_row_with_word(row, word) {
+        word = word.toUpperCase();
+        for (let i=0;i<word.length;i++) {
+            let x = document.getElementById('cell'+row+i).getElementsByClassName('content')[0]
+            x.innerHTML = word[i]
+        }
+    }
+
+    submit () {
+        this.update_possible_words();
+        this.add_row();
+        this.active_word = Wordle.get_optimal_word(this.possible_words)
+        Wordle.fill_row_with_word(this.active_row, this.active_word)
     }
 }
 
@@ -98,14 +166,6 @@ function generate_table(rows, cols) {
     return fulltable
 }
 
-function fill_row_with_word(row, word) {
-    word = word.toUpperCase();
-    for (let i=0;i<word.length;i++) {
-        let x = document.getElementById('cell'+row+i).getElementsByClassName('content')[0]
-        x.innerHTML = word[i]
-    }
-}
-
 function main() {
     document.getElementById("game").innerHTML = generate_table(h, w);
     game = new Wordle(h, w);
@@ -122,12 +182,11 @@ function main() {
 
     document.addEventListener('keypress', function (e) {
         if (e.key=='Enter') {
-            console.log(game.get_row_code())
-            game.add_row();
+            game.submit();
         }
     })
 
-    fill_row_with_word(0,'toeas');
+    Wordle.fill_row_with_word(0,'toeas');
     game.add_row()
 
     fetch("https://raw.githubusercontent.com/lorenbrichter/Words/master/Words/en.txt")
