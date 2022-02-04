@@ -86,6 +86,9 @@ class Wordle {
         this.cols = cols;
         this.possible_words = [];
 
+        this.possible_words_previous = []
+        this.active_words_previous = []
+
         this.color_cycle = [['_','y'],['y','g'],['g','_']];
         this.active_row = -1;
         this.active_word = "toeas";
@@ -148,21 +151,29 @@ class Wordle {
             candidates.push(...pws.sample(50))
         }
 
-        let scores = []
-        candidates.forEach(word => {
+        let stop_early = document.querySelector('#good-enough').checked
+
+        let current_best = [pws[0],Infinity]
+        candidates.some(word => {
             let distribution = new Array(3**this.cols).fill(0);
             pws.forEach(word2 => {
                 distribution[Wordle.check(word2, word)] += 1 
             })
             //console.log(distribution);
-            scores[word] = Math.max(...distribution);
-            if (pws.includes(word)) scores[word] -= 0.1;
-        })
+            let score = Math.max(...distribution);
+            if (pws.includes(word)) score -= 0.1;
 
-        //console.log(scores)
+            if (score < current_best[1]) current_best = [word, score]
+            
+            if (stop_early) {
+                if (score <= 1 || score <= (pws.length / 10)) {
+                    return true;
+                }
+            }
+        });
 
-        return Object.keys(scores).reduce((w1, w2) => scores[w1]<=scores[w2] ? w1 : w2);
-        //return pws[Math.floor(Math.random()*pws.length)];
+        
+        return current_best[0]
     }
 
     change_cell (i, j) {
@@ -213,6 +224,25 @@ class Wordle {
         }
     }
 
+    undo() {
+        if (this.active_row<=0) return;
+
+        for (let i=this.active_row;i<this.rows;i++) {
+            for (let j=0;j<w;j++) {
+                let x = document.getElementById("cell"+i+j)
+                x.getElementsByClassName('content')[0].innerHTML = ' '
+                x.style['background-color'] = 'white'
+            }
+        }
+
+        this.active_row -= 1;
+        this.possible_words = this.possible_words_previous.pop()
+        this.active_word = this.active_words_previous.pop()
+        this.cell_colors.pop()
+
+
+    }
+
     static fill_row_with_word(row, word) {
         word = word.toUpperCase();
         for (let i=0;i<word.length;i++) {
@@ -225,9 +255,17 @@ class Wordle {
         if (this.active_row+1 >= this.rows) return;
         if (Wordle.c2n(this.get_row_code()) == 3**this.cols-1) return;
 
+        if (this.active_row==0) {
+            this.possible_words_previous.push(word_list);
+        } else {
+            this.possible_words_previous.push(this.possible_words);
+        }
+        this.active_words_previous.push(this.active_word)
+
         this.update_possible_words();
         if (!this.possible_words.length) {
             this.error_row();
+            this.possible_words = this.possible_words_previous.pop();
             return;
         }
         this.add_row();
@@ -257,6 +295,20 @@ function generate_table(rows, cols) {
     return fulltable
 }
 
+function reset() {
+    for (let i=0;i<h;i++) {
+        for (let j=0;j<w;j++) {
+            let x = document.getElementById("cell"+i+j)
+            x.getElementsByClassName('content')[0].innerHTML = ' '
+            x.style['background-color'] = 'white'
+        }
+    }
+
+    game = new Wordle(h, w);
+    Wordle.fill_row_with_word(0,'toeas');
+    game.add_row()
+}
+
 function main() {
     document.getElementById("game").innerHTML = generate_table(h, w);
     game = new Wordle(h, w);
@@ -272,21 +324,26 @@ function main() {
     }
 
     document.addEventListener('keypress', function (e) {
-        if (e.key=='Enter') {
+        if (e.key=='Enter' || e.key=='ArrowRight' || e.key=='ArrowDown') {
             game.submit();
+        } else if (e.key=='r') {
+            reset();
+        } else if (e.key=='u' || e.key=='ArrowLeft' || e.key=='ArrowUp') {
+            game.undo();
         }
     })
 
     Wordle.fill_row_with_word(0,'toeas');
     game.add_row()
 
-    fetch("https://raw.githubusercontent.com/lorenbrichter/Words/master/Words/en.txt")
+    
+}
+
+fetch("https://raw.githubusercontent.com/lorenbrichter/Words/master/Words/en.txt")
         .then( r => r.text() )
         .then( t => {
             word_list = t.split('\n').filter(word => word.length==5);
         });
-}
-
 window.addEventListener('load', main)
 </script>
 </head>
@@ -299,15 +356,19 @@ window.addEventListener('load', main)
         <div id="game"></div>
 
         <div id="settings">
-            <span>Settings:</span><br>
+            <span>Settings & Optimizations:</span><br>
             <span>
-                <input type="checkbox" id="word-cap">
-                <label for="word-cap">Search random subset (faster)</label>
+                <input type="checkbox" id="word-cap" checked>
+                <label for="word-cap" title="Picks a weighted sample of 150 words to choose from for the next guess">Search random subset (faster)</label>
             </span><br>
             <span>
                 <input type="checkbox" id="hard-mode">
-                <label for="hard-mode">Hard mode</label>
-            </span>
+                <label for="hard-mode" title="Must use correct guesses in future guesses">Hard mode</label>
+            </span><br>
+            <span>
+                <input type="checkbox" id="good-enough" checked>
+                <label for="good-enough" title="Stops the search early if a good candidate word is found">Early stop (faster)</label>
+            </span><br>
         </div>
     </div>
 </body>
