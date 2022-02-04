@@ -1,13 +1,33 @@
 <html>
 <head>
-    <title>Wordle Test</title>
+    <title>wordLOL</title>
 
 <style>
-table {
+#top-section {
+    height: 4vw;
+    position: relative;
+    text-align: center;
+    font-size: 3vw;
+}
+#bottom-section {
+    position: relative;
+}
+#optimizations {
+    width: 30%;
+    position: absolute;
+    left: 0%;
+}
+#game {
     width: 40%;
     position: absolute;
     top: 0;
     left: 30%;
+}
+#gametable {
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 td[id^="cell"] {
     border: 2px solid #444;
@@ -105,14 +125,14 @@ class Wordle {
             pws.forEach(word2 => {
                 distribution[Wordle.check(word2, word)] += 1 
             })
-            console.log(distribution);
+            //console.log(distribution);
             scores[word] = Math.max(...distribution);
             if (pws.includes(word)) scores[word] -= 0.1;
         })
 
-        console.log(scores)
+        //console.log(scores)
 
-        return Object.keys(scores).reduce((w1, w2) => scores[w1]<scores[w2] ? w1 : w2);
+        return Object.keys(scores).reduce((w1, w2) => scores[w1]<=scores[w2] ? w1 : w2);
         //return pws[Math.floor(Math.random()*pws.length)];
     }
 
@@ -136,6 +156,9 @@ class Wordle {
 
         this.possible_words = this.possible_words.filter(word => 
             Wordle.check(word, this.active_word) == code)
+
+        console.log('Words left: '+this.possible_words.length)
+        console.log(this.possible_words)
     }
 
     get_row_code () {
@@ -153,6 +176,14 @@ class Wordle {
         }
     }
 
+    error_row() {
+        if (this.cell_colors.length >= this.rows) return;
+
+        for (let j=0;j<this.cols;j++) {
+            document.getElementById("cell"+(this.active_row+1)+j).style['background-color'] = "red";
+        }
+    }
+
     static fill_row_with_word(row, word) {
         word = word.toUpperCase();
         for (let i=0;i<word.length;i++) {
@@ -166,6 +197,10 @@ class Wordle {
         if (Wordle.c2n(this.get_row_code()) == 3**this.cols-1) return;
 
         this.update_possible_words();
+        if (!this.possible_words.length) {
+            this.error_row();
+            return;
+        }
         this.add_row();
         this.active_word = this.get_optimal_word(this.possible_words)
         Wordle.fill_row_with_word(this.active_row, this.active_word)
@@ -173,7 +208,7 @@ class Wordle {
 }
 
 function generate_table(rows, cols) {
-    fulltable = "<table>\n";
+    fulltable = '<table id="gametable">\n';
     for (let i=0;i<rows;i++) {
         fulltable += '<tr class="row'+i+'">\n';
         for (let j=0;j<cols;j++) {
@@ -223,6 +258,11 @@ window.addEventListener('load', main)
 </head>
 
 <body>
-    <div id="game"></div>
+    <div id="top-section">
+        wordLOL
+    </div>
+    <div id="bottom-section">
+        <div id="game"></div>
+    </div>
 </body>
 </html>
