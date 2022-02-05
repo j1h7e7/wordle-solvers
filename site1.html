@@ -147,8 +147,11 @@ class Wordle {
         }
 
         if (document.querySelector('#word-cap').checked) {
-            candidates = candidates.sample(100)
-            candidates.push(...pws.sample(50))
+            let factor = Math.floor(50000 / pws.length);
+            console.log(factor);
+
+            candidates = candidates.sample(factor*2);
+            candidates.push(...pws.sample(factor));
         }
 
         let stop_early = document.querySelector('#good-enough').checked
@@ -166,9 +169,9 @@ class Wordle {
             if (score < current_best[1]) current_best = [word, score]
             
             if (stop_early) {
-                if (score <= 1 || score <= (pws.length / 10)) {
-                    return true;
-                }
+                if (score <= 0.9) return true;
+                if (score <= 1 && pws.length >= 20) return true;
+                if (score <= (pws.length / 10)) return true;
             }
         });
 
@@ -266,6 +269,7 @@ class Wordle {
         if (!this.possible_words.length) {
             this.error_row();
             this.possible_words = this.possible_words_previous.pop();
+            this.active_word = this.active_words_previous.pop();
             return;
         }
         this.add_row();
@@ -324,6 +328,10 @@ function main() {
     }
 
     document.addEventListener('keypress', function (e) {
+        for (let i=1;i<=5;i++) {
+            if (e.key==i) game.change_cell(game.active_row,i-1);
+        }
+
         if (e.key=='Enter' || e.key=='ArrowRight' || e.key=='ArrowDown') {
             game.submit();
         } else if (e.key=='r') {
@@ -331,6 +339,7 @@ function main() {
         } else if (e.key=='u' || e.key=='ArrowLeft' || e.key=='ArrowUp') {
             game.undo();
         }
+        else console.log(e.key);
     })
 
     Wordle.fill_row_with_word(0,'toeas');
@@ -359,7 +368,7 @@ window.addEventListener('load', main)
             <span>Settings & Optimizations:</span><br>
             <span>
                 <input type="checkbox" id="word-cap" checked>
-                <label for="word-cap" title="Picks a weighted sample of 150 words to choose from for the next guess">Search random subset (faster)</label>
+                <label for="word-cap" title="Picks a weighted sample of words to choose from for the next guess">Search random subset (faster)</label>
             </span><br>
             <span>
                 <input type="checkbox" id="hard-mode">
