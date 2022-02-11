@@ -161,8 +161,8 @@ class Wordle {
         let candidates = this.get_candidates(pws);
 
         let stop_early = document.querySelector('#good-enough').checked
-
         let stop_checker, scorer;
+
         if (document.querySelector('#method').value == 'min-worst') {
             stop_checker = (score) => score<=0.9 || (score<=1 && pws.length>=20) || score<=(pws.length/10);
             scorer = (distr) => Math.max(...distr);
@@ -172,7 +172,14 @@ class Wordle {
                 let x = distr.filter(s => s!=0);
                 x = x.map(a=>a/pws.length);
                 x = x.map(a=>Math.log2(1/a)*a);
-                return -x.reduce((a, b) => a + b, 0.0);
+                return -x.reduce((a, b) => a + b, 0);
+            }
+        } else if (document.querySelector('#method').value == 'low-stdev') {
+            stop_checker = (score) => (score <= pws.length/60 && pws.length<20);
+            scorer = (distr) => {
+                let mean = distr.reduce((a,b) => a+b, 0) / distr.length;
+                let x = distr.map(a=>(a-mean)**2);
+                return Math.sqrt(x.reduce((a, b) => a + b, 0) / x.length);
             }
         }
 
@@ -395,6 +402,7 @@ window.addEventListener('load', main)
                 <select  id="method">
                     <option value="min-worst">Minimize worst case</option>
                     <option value="max-info">Maximum information</option>
+                    <option value="low-stdev">Low Variance</option>
                 </select>
             </span><br>
         </div>
