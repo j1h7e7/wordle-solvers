@@ -135,9 +135,7 @@ class Wordle {
         return num
     }
 
-    get_optimal_word(pws) {
-        if (pws.length == 1) return pws[0];
-
+    get_candidates(pws) {
         let candidates;
 
         if (document.querySelector('#hard-mode').checked) {
@@ -148,13 +146,35 @@ class Wordle {
 
         if (document.querySelector('#word-cap').checked) {
             let factor = Math.floor(50000 / pws.length);
-            console.log(factor);
+            //console.log(factor);
 
             candidates = candidates.sample(factor*2);
             candidates.push(...pws.sample(factor));
         }
 
+        return candidates;
+    }
+
+    get_optimal_word(pws) {
+        if (pws.length == 1) return pws[0];
+
+        let candidates = this.get_candidates(pws);
+
         let stop_early = document.querySelector('#good-enough').checked
+
+        let stop_checker, scorer;
+        if (document.querySelector('#method').value == 'min-worst') {
+            stop_checker = (score) => score<=0.9 || (score<=1 && pws.length>=20) || score<=(pws.length/10);
+            scorer = (distr) => Math.max(...distr);
+        } else if (document.querySelector('#method').value == 'max-info') {
+            stop_checker = (score) => score<-4.5 || score<-5+self.active_row;
+            scorer = (distr) => {
+                let x = distr.filter(s => s!=0);
+                x = x.map(a=>a/pws.length);
+                x = x.map(a=>Math.log2(1/a)*a);
+                return -x.reduce((a, b) => a + b, 0.0);
+            }
+        }
 
         let current_best = [pws[0],Infinity]
         candidates.some(word => {
@@ -163,20 +183,16 @@ class Wordle {
                 distribution[Wordle.check(word2, word)] += 1 
             })
             //console.log(distribution);
-            let score = Math.max(...distribution);
+            let score = scorer(distribution);
             if (pws.includes(word)) score -= 0.1;
 
             if (score < current_best[1]) current_best = [word, score]
             
-            if (stop_early) {
-                if (score <= 0.9) return true;
-                if (score <= 1 && pws.length >= 20) return true;
-                if (score <= (pws.length / 10)) return true;
-            }
+            if (stop_early && stop_checker(score)) return true;
         });
 
-        
-        return current_best[0]
+        console.log(current_best);
+        return current_best[0];
     }
 
     change_cell (i, j) {
@@ -194,7 +210,6 @@ class Wordle {
 
     update_possible_words() {
         let code = Wordle.c2n(this.get_row_code());
-        console.log(code);
         if (this.active_row == 0) this.possible_words = [...word_list];
 
         this.possible_words = this.possible_words.filter(word => 
@@ -320,10 +335,7 @@ function main() {
     for (let i=0;i<h;i++) {
         for (let j=0;j<w;j++) {
             let x = document.getElementById("cell"+i+j)
-            x.onclick = () => {
-                game.change_cell(i,j);
-                console.log(i,j);
-            }
+            x.onclick = () => game.change_cell(i,j);
         }
     }
 
@@ -377,6 +389,13 @@ window.addEventListener('load', main)
             <span>
                 <input type="checkbox" id="good-enough" checked>
                 <label for="good-enough" title="Stops the search early if a good candidate word is found">Early stop (faster)</label>
+            </span><br>
+            <span>
+                <label for="method">Selection method:</label>
+                <select  id="method">
+                    <option value="min-worst">Minimize worst case</option>
+                    <option value="max-info">Maximum information</option>
+                </select>
             </span><br>
         </div>
     </div>
