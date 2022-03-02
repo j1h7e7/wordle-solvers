@@ -167,7 +167,7 @@ class Wordle {
             stop_checker = (score) => score<=0.9 || (score<=1 && pws.length>=20) || score<=(pws.length/10);
             scorer = (distr) => Math.max(...distr);
         } else if (document.querySelector('#method').value == 'max-info') {
-            stop_checker = (score) => score<-4.5 || score<-5+self.active_row;
+            stop_checker = (score) => score<-7+2*this.current_best;
             scorer = (distr) => {
                 let x = distr.filter(s => s!=0);
                 x = x.map(a=>a/pws.length);
@@ -198,7 +198,7 @@ class Wordle {
             if (stop_early && stop_checker(score)) return true;
         });
 
-        console.log(current_best);
+        console.log(current_best[1]-2*this.active_row);
         return current_best[0];
     }
 
@@ -386,12 +386,12 @@ window.addEventListener('load', main)
         <div id="settings">
             <span>Settings & Optimizations:</span><br>
             <span>
-                <input type="checkbox" id="word-cap" checked>
-                <label for="word-cap" title="Picks a weighted sample of words to choose from for the next guess">Search random subset (faster)</label>
-            </span><br>
-            <span>
                 <input type="checkbox" id="hard-mode">
                 <label for="hard-mode" title="Must use correct guesses in future guesses">Hard mode</label>
+            </span><br>
+            <span>
+                <input type="checkbox" id="word-cap" checked>
+                <label for="word-cap" title="Picks a weighted sample of words to choose from for the next guess">Search random subset (faster)</label>
             </span><br>
             <span>
                 <input type="checkbox" id="good-enough" checked>
@@ -400,8 +400,8 @@ window.addEventListener('load', main)
             <span>
                 <label for="method">Selection method:</label>
                 <select  id="method">
-                    <option value="min-worst">Minimize worst case</option>
                     <option value="max-info">Maximum information</option>
+                    <option value="min-worst">Minimize worst case</option>
                     <option value="low-stdev">Low Variance</option>
                 </select>
             </span><br>
