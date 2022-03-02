@@ -39,25 +39,14 @@ body {
     border: 2px solid #444;
     border-radius: 1vw;
     background-color: white;
-    width: calc(8% - 8px);
     margin: 2px;
+    text-align: center;
+    font-family: monospace;
 }
 [id^="cell"]::after {
     content: "";
     display: block;
     padding-bottom: 100%;
-}
-
-.content {
-    position: relative;
-    top: calc(-1vw - 2px);
-    width: calc(100% - 4px);
-    height: 0;
-    font-size: 8vw;
-    display: flex;
-    justify-content: center;
-    font-family: monospace;
-    padding: 2px;
 }
 
 #settings {
@@ -91,7 +80,7 @@ class Wordle {
 
         this.color_cycle = [['_','y'],['y','g'],['g','_']];
         this.active_row = -1;
-        this.active_word = "toeas";
+        this.active_word = "tares";
 
         this.colors = {
             '_': 'darkgray', 'y': 'yellow', 'g': 'green'
@@ -135,6 +124,13 @@ class Wordle {
         return num
     }
 
+    get_starting_word() {
+        //this.active_word = this.get_optimal_word(word_list);
+        let starting_words = ['','','','sae','taes','tares','tories','carnies','pantries','contrails','celerities','perennities']
+        this.active_word = starting_words[w];
+        return this.active_word;
+    }
+
     get_candidates(pws) {
         let candidates;
 
@@ -145,11 +141,14 @@ class Wordle {
         }
 
         if (document.querySelector('#word-cap').checked) {
-            let factor = Math.floor(50000 / pws.length);
+            let factor = Math.floor(50000 / pws.length / (w**3) * 125);
             //console.log(factor);
+            factor = Math.min(5000,factor)
 
             candidates = candidates.sample(factor*2);
             candidates.push(...pws.sample(factor));
+
+            console.log(candidates.length+' to check')
         }
 
         return candidates;
@@ -271,7 +270,7 @@ class Wordle {
     static fill_row_with_word(row, word) {
         word = word.toUpperCase();
         for (let i=0;i<word.length;i++) {
-            let x = document.getElementById('cell'+row+i).getElementsByClassName('content')[0]
+            let x = document.getElementById('cell'+row+i)
             x.innerHTML = word[i]
         }
     }
@@ -311,7 +310,8 @@ function generate_table(rows, cols) {
         fulltable += '<div class="empty">&nbsp;</div>\n';
         for (let j=0;j<cols;j++) {
             fulltable += '<div id="cell'+i+j+'">';
-            fulltable += '<span class="content"> </span>'
+            //fulltable += '<span class="content"> </span>'
+            fulltable += ' '
             fulltable += '</div>\n';
         }
         fulltable += '</div>\n'
@@ -325,26 +325,58 @@ function reset() {
     for (let i=0;i<h;i++) {
         for (let j=0;j<w;j++) {
             let x = document.getElementById("cell"+i+j)
-            x.getElementsByClassName('content')[0].innerHTML = ' '
+            x.innerHTML = ' '
             x.style['background-color'] = 'white'
         }
     }
 
     game = new Wordle(h, w);
-    Wordle.fill_row_with_word(0,'toeas');
-    game.add_row()
+    game.get_starting_word();
+    Wordle.fill_row_with_word(0,game.active_word);
+    game.add_row();
 }
 
-function main() {
+function update_game_size(is_first_time=false) {
     document.getElementById("game").innerHTML = generate_table(h, w);
     game = new Wordle(h, w);
-
+    
     for (let i=0;i<h;i++) {
         for (let j=0;j<w;j++) {
             let x = document.getElementById("cell"+i+j)
             x.onclick = () => game.change_cell(i,j);
+            x.style.width = 'calc('+(40/w).toFixed(2)+'% - 8px)';
+            x.style.height = 'calc('+(40/w).toFixed(2)+'vw - 5px)'
+            x.style.lineHeight = 'calc('+(40/w).toFixed(2)+'vw - 5px)'
+            x.style.fontSize = (40/w).toFixed(2)+'vw'
         }
     }
+
+    if (!is_first_time) {
+        word_list = master_word_list.filter(word => word.length==w);
+        game.get_starting_word();
+        Wordle.fill_row_with_word(0,game.active_word);
+        game.add_row();
+    }
+}
+
+function increase_game_size() {
+    if (w < 11) {
+        w++;
+        update_game_size();
+    }
+}
+
+function decrase_game_size() {
+    if (w > 3) {
+        w--;
+        update_game_size();
+    }
+}
+
+function main() {
+    update_game_size(true);
+    Wordle.fill_row_with_word(0,'tares');
+    game.add_row()
 
     document.addEventListener('keypress', function (e) {
         for (let i=1;i<=5;i++) {
@@ -357,20 +389,21 @@ function main() {
             reset();
         } else if (e.key=='u' || e.key=='ArrowLeft' || e.key=='ArrowUp') {
             game.undo();
+        } else if (e.key=='=' || e.key=='+') {
+            increase_game_size();
+        } else if (e.key=='-' || e.key=='_') {
+            decrase_game_size();
         }
         else console.log(e.key);
     })
-
-    Wordle.fill_row_with_word(0,'toeas');
-    game.add_row()
-
     
 }
 
 fetch("https://raw.githubusercontent.com/lorenbrichter/Words/master/Words/en.txt")
         .then( r => r.text() )
         .then( t => {
-            word_list = t.split('\n').filter(word => word.length==5);
+            master_word_list = t.split('\n');
+            word_list = master_word_list.filter(word => word.length==5)
         });
 window.addEventListener('load', main)
 </script>

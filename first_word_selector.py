@@ -1,11 +1,11 @@
 import json
 from statistics import stdev
-import random
+import random, math
 
 
 english_words_lower_alpha_set = json.loads(open("words3.txt").readline())
 
-word_length = 5
+word_length = 10
 
 words = [x for x in filter(lambda x: len(x)==word_length, english_words_lower_alpha_set)]
 
@@ -30,7 +30,15 @@ def get_score(wordlist, testword):
 
     results2 = list(results.values())
 
-    score = max(results2)
+    #score = max(results2)
+    '''scorer = (distr) => {
+                let x = distr.filter(s => s!=0);
+                x = x.map(a=>a/pws.length);
+                x = x.map(a=>Math.log2(1/a)*a);
+                return -x.reduce((a, b) => a + b, 0);
+            }'''
+    l = len(wordlist)
+    score = -sum([math.log2(l/x)*x/l for x in results2])
 
     return score
 
