@@ -5,7 +5,7 @@ import random, math
 
 english_words_lower_alpha_set = json.loads(open("words3.txt").readline())
 
-word_length = 10
+word_length = 20
 
 words = [x for x in filter(lambda x: len(x)==word_length, english_words_lower_alpha_set)]
 

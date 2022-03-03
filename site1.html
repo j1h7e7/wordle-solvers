@@ -63,6 +63,30 @@ input[type=checkbox] {
 
 <script>
 
+let starting_words = [
+    '',
+    'a',
+    'ao',
+    'sae',
+    'taes',
+    'tares',
+    'tories',
+    'carnies',
+    'pantries',
+    'contrails',
+    'celerities',
+    'perennities',
+    'centricities',
+    'peregrinities',
+    'meteoriticists',
+    'secretivenesses',
+    'seropositivities',
+    'restrictivenesses',
+    'muddleheadednesses',
+    'disproportionations',
+    'noninstitutionalized'
+]
+
 let h=6;
 let w=5;
 let game;
@@ -126,7 +150,6 @@ class Wordle {
 
     get_starting_word() {
         //this.active_word = this.get_optimal_word(word_list);
-        let starting_words = ['','','','sae','taes','tares','tories','carnies','pantries','contrails','celerities','perennities']
         this.active_word = starting_words[w];
         return this.active_word;
     }
@@ -367,7 +390,7 @@ function increase_game_size() {
 }
 
 function decrase_game_size() {
-    if (w > 3) {
+    if (w > 4) {
         w--;
         update_game_size();
     }
@@ -379,7 +402,7 @@ function main() {
     game.add_row()
 
     document.addEventListener('keypress', function (e) {
-        for (let i=1;i<=5;i++) {
+        for (let i=1;i<=9;i++) {
             if (e.key==i) game.change_cell(game.active_row,i-1);
         }
 
