@@ -1,0 +1,123 @@
+<html>
+<head>
+<title>TEST</title>
+
+<style>
+body {
+    user-select: none;
+}
+#top-section {
+    height: 9vw;
+    position: relative;
+    text-align: center;
+    font-size: 7vw;
+}
+#bottom-section {
+    position: relative;
+}
+
+#game {
+    width: 40%;
+    position: absolute;
+    top: 0;
+    left: 30%;
+}
+#main-table {
+    display: block;
+    width: 100%;
+}
+[class^=table-row] {
+    clear: both;
+}
+.empty {
+    width: 30%;
+    display: block;
+    float: left;
+}
+[id^="cell"] {
+    width: calc(20% - 8px);
+    /*height: calc(8% - 5px);*/
+    line-height: calc(8vw - 5px);
+    font-size: 8vw;
+    border-radius: 1vw
+}
+
+[id^="cell"] {
+    float: left;
+    border: 2px solid #444;
+    border-radius: 1vw;
+    background-color: white;
+    margin: 2px;
+    text-align: center;
+    font-family: monospace;
+}
+
+#settings {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 30%;
+    font-size: 24;
+}
+input[type=checkbox] {
+    transform: scale(1.5)
+}
+</style>
+
+<script>
+
+function generate_table(rows, cols) {
+    fulltable = '<div id="main-table">\n';
+    for (let i=0;i<rows;i++) {
+        fulltable += '<div class="table-row'+i+'">\n';
+        for (let j=0;j<cols;j++) {
+            fulltable += '<div id="cell'+i+j+'">';
+            fulltable += 'A'
+            fulltable += '</div>\n';
+        }
+        fulltable += '</div>\n'
+    }
+    fulltable += "</div>";
+
+    return fulltable
+}
+
+function main() {
+    document.getElementById("game").innerHTML = generate_table(6, 5);
+
+
+    document.addEventListener('keypress', function (e) {
+        for (let i=1;i<=9;i++) {
+            if (e.key==i) document.getElementById("game").innerHTML = generate_table(6, i);
+        }
+    });
+}
+window.addEventListener('load', main)
+</script>
+</head>
+
+<body>
+    <div id="top-section">
+        wordLOL
+    </div>
+    <div id="bottom-section">
+        <div id="game"></div>
+
+        <div id="settings">
+            <span>TEST STUFF:</span><br>
+            <span>
+                <input type="checkbox" id="test1">
+                <label for="test1" title="title1">checkbox</label>
+            </span><br>
+            <span>
+                <label for="test2">dropdown</label>
+                <select  id="test2">
+                    <option value="entry1">entry1</option>
+                    <option value="entry2">entry2</option>
+                    <option value="entry3">entry3</option>
+                </select>
+            </span><br>
+        </div>
+    </div>
+</body>
+</html>

@@ -277,7 +277,7 @@ class Wordle {
         for (let i=this.active_row;i<this.rows;i++) {
             for (let j=0;j<w;j++) {
                 let x = document.getElementById("cell"+i+j)
-                x.getElementsByClassName('content')[0].innerHTML = ' '
+                x.innerHTML = ' '
                 x.style['background-color'] = 'white'
             }
         }
@@ -365,12 +365,13 @@ function update_game_size(is_first_time=false) {
     
     for (let i=0;i<h;i++) {
         for (let j=0;j<w;j++) {
-            let x = document.getElementById("cell"+i+j)
+            let x = document.getElementById("cell"+i+j);
             x.onclick = () => game.change_cell(i,j);
             x.style.width = 'calc('+(40/w).toFixed(2)+'% - 8px)';
-            x.style.height = 'calc('+(40/w).toFixed(2)+'vw - 5px)'
-            x.style.lineHeight = 'calc('+(40/w).toFixed(2)+'vw - 5px)'
-            x.style.fontSize = (40/w).toFixed(2)+'vw'
+            x.style.height = 'calc('+(40/w).toFixed(2)+'vw - 5px)';
+            x.style.lineHeight = 'calc('+(40/w).toFixed(2)+'vw - 5px)';
+            x.style.fontSize = (40/w).toFixed(2)+'vw';
+            x.style.borderRadius = (5/w).toFixed(2)+'vw';
         }
     }
 
